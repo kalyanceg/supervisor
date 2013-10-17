@@ -329,13 +329,20 @@ class SupervisorNamespaceRPCInterface:
         processes = group.processes.values()
         processes.sort()
         processes = [ (group, process) for process in processes ]
+        results=[]
+        for group, process in processes:
+          name = make_namespec(group.config.name, process.config.name)
+          grp, proc = self._getGroupAndProcess(name)
+          msg=proc.spawn()
+          results.append(
+                {'name':process.config.name,
+                 'group':group.config.name,
+                 'status':Faults.SUCCESS,
+                 'description':'OK'}
+                )
 
-        startall = make_allfunc(processes, isNotRunning, self.startProcess,
-                                wait=wait)
-
-        startall.delay = 0.05
-        startall.rpcinterface = self
-        return startall # deferred
+        
+        return results # deferred
 
     def startAllProcesses(self, wait=True):
         """ Start all processes listed in the configuration file
@@ -344,14 +351,20 @@ class SupervisorNamespaceRPCInterface:
         @return array result   An array of process status info structs
         """
         self._update('startAllProcesses')
-
+        results=[]
         processes = self._getAllProcesses()
-        startall = make_allfunc(processes, isNotRunning, self.startProcess,
-                                wait=wait)
+        for group, process in processes:
+          name = make_namespec(group.config.name, process.config.name)
+          grp, proc = self._getGroupAndProcess(name)
+          msg=proc.spawn() 
+          results.append( 
+                {'name':process.config.name,
+                 'group':group.config.name,
+                 'status':Faults.SUCCESS,
+                 'description':'OK'}
+                )
 
-        startall.delay = 0.05
-        startall.rpcinterface = self
-        return startall # deferred
+        return results # deferred
 
     def stopProcess(self, name, wait=True):
         """ Stop a process named by name
@@ -416,13 +429,21 @@ class SupervisorNamespaceRPCInterface:
         processes = group.processes.values()
         processes.sort()
         processes = [ (group, process) for process in processes ]
+        results=[]
 
-        killall = make_allfunc(processes, isRunning, self.stopProcess,
-                               wait=wait)
+        for group, process in processes:
+          name = make_namespec(group.config.name, process.config.name)
+          grp, proc = self._getGroupAndProcess(name)
+          msg=proc.stop()
+          results.append(
+                {'name':process.config.name,
+                 'group':group.config.name,
+                 'status':Faults.SUCCESS,
+                 'description':'OK'}
+                )
 
-        killall.delay = 0.05
-        killall.rpcinterface = self
-        return killall # deferred
+        
+        return results # deferred
 
     def stopAllProcesses(self, wait=True):
         """ Stop all processes in the process list
@@ -430,16 +451,27 @@ class SupervisorNamespaceRPCInterface:
         @param  boolean wait   Wait for each process to be fully stopped
         @return array result   An array of process status info structs
         """
+    
         self._update('stopAllProcesses')
 
         processes = self._getAllProcesses()
+        results=[]
 
-        killall = make_allfunc(processes, isRunning, self.stopProcess,
-                               wait=wait)
+        for group, process in processes:
+          name = make_namespec(group.config.name, process.config.name)
+          grp, proc = self._getGroupAndProcess(name)
+          msg=proc.stop()
 
-        killall.delay = 0.05
-        killall.rpcinterface = self
-        return killall # deferred
+          results.append(
+                {'name':process.config.name,
+                 'group':group.config.name,
+                 'status':Faults.SUCCESS,
+                 'description':'OK'}
+                )
+ 
+     
+        #killall.rpcinterface = self
+        return results # deferred
 
     def getAllConfigInfo(self):
         """ Get info about all available process configurations. Each struct
